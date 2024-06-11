@@ -13,6 +13,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Scanner;
 import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.TimeUnit;
@@ -33,11 +34,13 @@ public class Host {
     private static Scanner sc = new Scanner(System.in);
     public static TreeMap<Integer, Player> players = new TreeMap<>();
     public static TreeMap<Integer, Connection> connections = new TreeMap<>();
+    public static TreeSet<Integer> spectators = new TreeSet<>();
     private static Game game;
     private static LinkedBlockingDeque<Integer> comms = new LinkedBlockingDeque<>();
     private static Thread servingThread = null;
     private static CountDownLatch countdown = null;
     private static final Object SID_LOCK = new Object();
+    public static final Object SPEC_LOCK = new Object();
     private static volatile int CSID = 0;
     private static volatile int gamestate = 0;
     private static int getRestrictNum(String prompt, int lo, int hi) {
