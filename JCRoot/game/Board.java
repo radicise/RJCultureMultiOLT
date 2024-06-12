@@ -14,13 +14,12 @@ public class Board {
     public char[] alpha = new char[]{'A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z'};
     public char[] charset = tilesets.get(Board.CHARI);
     public int chari = Board.CHARI;
-    public final int w, h, p;
+    public final int w, h;
     public Cell[][] board;
     private Cell lastMove = null;
-    public Board(int w, int h, int p) {
+    public Board(int w, int h) {
         this.w = w;
         this.h = h;
-        this.p = p;
         board = new Cell[h][w];
         for (int y = 0; y < h; y ++) {
             for (int x = 0; x < w; x ++) {
@@ -57,7 +56,7 @@ public class Board {
                 }
             }
         }
-        if (cteam == -1 && p > 0) {
+        if (cteam == -1) {
             return -2;
         }
         return cteam;
@@ -174,7 +173,7 @@ public class Board {
         Color.start();
         int team = args.length > 0 ? Integer.parseInt(args[0]) : 1;
         compact = true;
-        Board b = new Board(3, 3, 3);
+        Board b = new Board(3, 3);
         b.addTo(0, 0, team);
         b.addTo(0, 0, team);
         b.addTo(0, 0, team);

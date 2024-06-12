@@ -43,6 +43,9 @@ public class Host {
     public static final Object SPEC_LOCK = new Object();
     private static volatile int CSID = 0;
     private static volatile int gamestate = 0;
+    public static final int VER_MAJOR = 0;
+    public static final int VER_MINOR = 1;
+    public static final int VER_INFRAMINOR = 1;
     private static int getRestrictNum(String prompt, int lo, int hi) {
         while (true) {
             System.out.print(prompt);
@@ -160,7 +163,7 @@ public class Host {
         }
     }
     private static Board getTestBoard() {
-        Board testBoard = new Board(4, 1, 0);
+        Board testBoard = new Board(4, 1);
         testBoard.board[0][1].value = 2;
         testBoard.board[0][2].value = 3;
         testBoard.board[0][3].value = 4;
@@ -465,7 +468,7 @@ public class Host {
                 for (Player p : players.values()) {
                     Teams.teams[p.team.id].pcount ++;
                 }
-                game = new Game(itcw, itch, itcp);
+                game = new Game(itcw, itch);
                 countdown = new CountDownLatch(itcp);
                 for (Player p : players.values()) {
                     p.pipe.sink().write(ByteBuffer.wrap(new byte[]{1}));
@@ -520,6 +523,15 @@ public class Host {
             sOut.write(usingPass ? 1 : 0);
             sOut.write(hostname.length());
             sOut.write(hostname.getBytes());
+	    sOut.write((Host.VER_MAJOR >> 8) & 0xff);
+	    sOut.write(Host.VER_MAJOR & 0xff);
+	    sOut.write((Host.VER_MINOR >> 8) & 0xff);
+	    sOut.write(Host.VER_MINOR & 0xff);
+	    sOut.write((Host.VER_INFRAMINOR >> 8) & 0xff);
+	    sOut.write(Host.VER_INFRAMINOR & 0xff);
+	    sOut.flush();
+	    //sIn.read();
+	    //Thread.sleep(500);
             sock.close();
             return;
         }
@@ -650,7 +662,6 @@ public class Host {
                     read(sIn);
                     sOut.write(itcw);
                     sOut.write(itch);
-                    sOut.write(itcp);
                     countdown.countDown();
                     countdown.await();
                     gameloop(player);

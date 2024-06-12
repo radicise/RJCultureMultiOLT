@@ -6,22 +6,21 @@ import java.util.stream.Collectors;
 import JCRoot.Host;
 
 public class Game {
-    public final int width, height, players;
+    public final int width, height;
     public final Board board;
     public ArrayList<Integer> plist;
     // public int[] plist = Host.players.navigableKeySet().stream().mapToInt(e->e).toArray();
     public int pindex = 0;
     // public int cplayer = plist[pindex];
     public int cplayer;
-    public Game(int w, int h, int p) {
+    public Game(int w, int h) {
         synchronized(Host.SPEC_LOCK) {
             plist = new ArrayList<>(Host.players.navigableKeySet().stream().filter(e->!Host.spectators.contains(e)).collect(Collectors.toList()));
         }
         cplayer = plist.get(pindex);
         width = w;
         height = h;
-        players = p;
-        board = new Board(w, h, p);
+        board = new Board(w, h);
     }
     public boolean canMove(int team) {
         for (int y = 0; y < height; y ++) {

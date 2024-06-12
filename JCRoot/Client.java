@@ -27,6 +27,10 @@ public class Client {
     private static LinkedBlockingQueue<String> inputs = new LinkedBlockingQueue<>();
     private static final Object EXIT_LOCK = new Object(), READY_LOCK = new Object();
     private static CountDownLatch countdown = null;
+    private static int[] protver = new int[3];
+    private static boolean isPVer(int maj, int seg, int min) {
+        return ((maj == (-1)) || (protver[0] == maj)) && ((seg == (-1)) || (protver[1] == seg)) && ((min == (-1)) || protver[2] == min);
+    }
     private static int read(InputStream in) throws Exception {
         int r = in.read();
         if (r < 0) crash();
@@ -44,7 +48,20 @@ public class Client {
             boolean hasPass = read(sIn) > 0;
             byte[] buf = new byte[read(sIn)];
             read(sIn, buf);
-            sock.close();
+	    byte[] vbuf = new byte[6];
+	    //read(sIn, vbuf);
+	    vbuf[0] = (byte) (read(sIn));
+	    vbuf[1] = (byte) (read(sIn));
+	    vbuf[2] = (byte) (read(sIn));
+	    vbuf[3] = (byte) (read(sIn));
+	    vbuf[4] = (byte) (read(sIn));
+	    vbuf[5] = (byte) (read(sIn));
+	    protver[0] = ((vbuf[0] & 0xff) << 8) | (vbuf[1] & 0xff);
+	    protver[1] = ((vbuf[2] & 0xff) << 8) | (vbuf[3] & 0xff);
+	    protver[2] = ((vbuf[4] & 0xff) << 8) | (vbuf[5] & 0xff);
+	    //sOut.write(0x00);
+	    //Thread.sleep(500);
+            //sock.close();
             String hname = new String(buf);
             System.out.printf("Confirm joining \"%s\" with%s password? (Y/n) ", hname, hasPass?"":"out");
             if (sc.nextLine().toLowerCase().matches("(n|no)")) {
@@ -208,8 +225,11 @@ public class Client {
                 gamestate = 1;
                 sOut.write(1);
                 Teams.reset();
-                board = new Board(read(sIn), read(sIn), read(sIn));
-                gameloop();
+                board = new Board(read(sIn), read(sIn));
+                if (isPVer(0, 0, 1)) {
+			read(sIn);
+		}
+		gameloop();
             }
             if (commcode == 2) {
                 byte[] b = new byte[read(sIn)];
