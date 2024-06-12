@@ -11,6 +11,8 @@ import java.nio.channels.Pipe.SinkChannel;
 import java.nio.channels.Pipe.SourceChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.FileSystems;
+import java.nio.charset.StandardCharsets;
 import java.util.Scanner;
 import java.util.TreeMap;
 import java.util.TreeSet;
@@ -20,12 +22,16 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.stream.Stream;
 
+
 import JCRoot.game.*;
 import JCRoot.menu.ItemData;
 import JCRoot.menu.MInputData;
 import JCRoot.menu.Menu;
 import JCRoot.menu.MenuFrame;
 
+class Util {
+	public static final String NL = System.lineSeparator();
+}
 public class Host {
     private static volatile int itcw=0, itch=0, itcp=0;
     private static boolean usingPass = false;
@@ -46,6 +52,9 @@ public class Host {
     public static final int VER_MAJOR = 0;
     public static final int VER_MINOR = 1;
     public static final int VER_INFRAMINOR = 1;
+    public static final Path Pathof(String s) {
+	return FileSystems.getDefault().getPath(s);
+    }
     private static int getRestrictNum(String prompt, int lo, int hi) {
         while (true) {
             System.out.print(prompt);
@@ -69,7 +78,7 @@ public class Host {
             p.pipe2.source().read(ByteBuffer.wrap(codebuf));
             if (gamestate == 0) {
                 if (codebuf[0] == 0) {
-                    System.out.printf("\"%s\" from %s%s%s has left\n", p.name, p.team.color, p.team.name, Color.DEFAULT);
+                    System.out.printf("\"%s\" from %s%s%s has left%n", p.name, p.team.color, p.team.name, Color.DEFAULT);
                     synchronized(players) {
                         players.remove(pcode);
                         p.conn.s2O.write(0);
@@ -121,12 +130,12 @@ public class Host {
             while (true) {
                 x = read(pIn);
                 y = read(pIn);
-                if (game.validate(x, y, player.team.id)) {
+                if (game.validate(x, y, player.team.id)) {// TODO Fix disallowance bug
                     pOut.write(1);
                     break;
                 } else {
-                    System.out.println(player.team.id);
-                    System.out.println(game.board.board[y][x].team);
+                    //System.out.println(player.team.id);
+                    //System.out.println(game.board.board[y][x].team);
                     pOut.write(0);
                 }
             }
@@ -156,7 +165,7 @@ public class Host {
                     snk.write(ByteBuffer.wrap(new byte[]{3}));
                 }
                 // System.out.printf("Team %s%s won!\n", Teams.teams[game.board.checkWinner()], Color.DEFAULT);
-                System.out.printf("Team %s won!\n", Teams.teams[game.board.checkWinner()]);
+                System.out.printf("Team %s won!%n", Teams.teams[game.board.checkWinner()]);
                 Board.scoreboard();
                 return;
             }
@@ -173,7 +182,7 @@ public class Host {
         Board testBoard = getTestBoard();
         while (true) {
             System.out.println(testBoard);
-            System.out.printf("board %d/%d [%sprev%s/%snext%s/%sconfirm%s]?\n", testBoard.chari+1, Board.tilesets.size(), testBoard.chari > 0 ? Color.WHITE : Color.GRAY, Color.DEFAULT, testBoard.chari < (Board.tilesets.size()-1) ? Color.WHITE : Color.GRAY, Color.DEFAULT, Color.WHITE, Color.DEFAULT);
+            System.out.printf("board %d/%d [%sprev%s/%snext%s/%sconfirm%s]?%n", testBoard.chari+1, Board.tilesets.size(), testBoard.chari > 0 ? Color.WHITE : Color.GRAY, Color.DEFAULT, testBoard.chari < (Board.tilesets.size()-1) ? Color.WHITE : Color.GRAY, Color.DEFAULT, Color.WHITE, Color.DEFAULT);
             String l = sc.nextLine();
             if (l.equalsIgnoreCase("cancel")) {
                 return;
@@ -209,7 +218,7 @@ public class Host {
                         System.out.println("reverting to default location");
                         break;
                     }
-                    if (Files.exists(Path.of(l))) {
+                    if (Files.exists(Pathof(l))) {
                         location = l;
                         break;
                     }
@@ -219,16 +228,16 @@ public class Host {
                 location = "usersets.tset";
             }
         }
-        if (!Files.exists(Path.of(location))) {
+        if (!Files.exists(Pathof(location))) {
             System.out.println("couldn't find file");
             return;
         }
-        System.out.printf("About to load tilesets from \"%s\"\nConfirm loading? (this will remove any other tilesets that are currently loaded) (y/N) ", location);
+        System.out.printf("About to load tilesets from \"%s\"%nConfirm loading? (this will remove any other tilesets that are currently loaded) (y/N) ", location);
         if (!sc.nextLine().toLowerCase().matches("(y|yes)")) {
             System.out.println("aborting");
             return;
         }
-        Stream<String> datastream = Files.lines(Path.of(location));
+        Stream<String> datastream = Files.lines(Pathof(location), StandardCharsets.UTF_8);
         String[] lines = datastream.toArray(String[]::new);
         datastream.close();
         Board.CHARI = 0;
@@ -301,7 +310,7 @@ public class Host {
                 System.out.println("can't save there");
             }
         }
-        System.out.printf("About to save tilesets to \"%s\"\nConfirm saving? (this will delete any tilesets from this file that are not currently loaded) (y/N) ", location);
+        System.out.printf("About to save tilesets to \"%s\"%nConfirm saving? (this will delete any tilesets from this file that are not currently loaded) (y/N) ", location);
         if (!sc.nextLine().toLowerCase().matches("(y|yes)")) {
             System.out.println("aborting");
             return;
@@ -310,20 +319,14 @@ public class Host {
         for (char[] set : Board.tilesets) {
             f += String.format("%c%c%c%c\n", set[1], set[2], set[3], set[4]);
         }
-        f = f.substring(0, f.length()-1);
-        Files.writeString(Path.of(location), f);
+        f = f.substring(0, f.length() - 1);
+        Files.write(Pathof(location), f.getBytes(StandardCharsets.UTF_8));
         System.out.println("successfully saved tilesets");
     }
     private static void tileset() throws Exception {
         while (true) {
             int choice = getRestrictNum(
-                "Please select an option or enter \"done\" when finished:\n"+
-                " (1) use already loaded tileset\n"+
-                " (2) load tilesets from file\n"+
-                " (3) create new tileset\n"+
-                " (4) save tilesets to file:\n"+
-                "> ",
-                1, 4);
+                "Please select an option or enter \"done\" when finished:" + Util.NL + " (1) use already loaded tileset" + Util.NL + " (2) load tilesets from file" + Util.NL + " (3) create new tileset" + Util.NL + " (4) save tilesets to file:" + Util.NL + "> ", 1, 4);
             if (choice == 0) {
                 return;
             }
@@ -344,17 +347,8 @@ public class Host {
         }
     }
     private static void clcommand(String line) throws Exception {
-        if (line.charAt(0) == '"') {
-            System.out.println("unrecognized, try removing the quotes?");
-            return;
-        }
         if (line.equalsIgnoreCase("msg")) {
-            System.out.println(
-                "Welcome to JCultureMultiOL, the only (as of May 2024) online\n"+
-                "  implementation of the game Culture, by Secret Lab\n"+
-                "  if you don't know where to start, enter \"help\"\n"+
-                "  have fun!"
-            );
+            System.out.print("Welcome to JCultureMultiOL, the only (as of May 2024) online" + Util.NL + "implementation of the game \"Culture\" by Secret Lab Pty. Ltd.." + Util.NL + "Enter \"help\" for a useful information" + Util.NL);
             return;
         }
         if (line.equalsIgnoreCase("list")) {
@@ -404,7 +398,7 @@ public class Host {
             }
             Player pl = players.get(pid);
             Team nteam = Teams.teams[tid];
-            System.out.printf("\"%s\" has switched from team %s%s%s to team %s%s%s\n", pl.name, pl.team.color, pl.team.name, Color.DEFAULT, nteam.color, nteam.name, Color.DEFAULT);
+            System.out.printf("\"%s\" has switched from team %s%s%s to team %s%s%s%n", pl.name, pl.team.color, pl.team.name, Color.DEFAULT, nteam.color, nteam.name, Color.DEFAULT);
             pl.team = nteam;
             countdown = new CountDownLatch(players.size());
             for (Player p : players.values()) {
@@ -418,18 +412,18 @@ public class Host {
             options();
         } else if (line.equalsIgnoreCase("help")) {
             System.out.println("HELP MENU");
-            System.out.println(
-                "- help    -- shows this menu\n"+
-                "- msg     -- shows the welcome message\n"+
-                "- stop    -- stops the server\n"+
-                "- start   -- starts the game, will bring up a prompt for board dimensions\n"+
-                "- list    -- lists all players in the session\n"+
-                "- setteam -- switches what team a player is on,\n"+
-                "              prompts for player id and team id,\n"+
-                "              automatically runs the \"list\" command\n"+
-                "- tileset -- opens the prompt to change the game's tileset\n"+
-                "\nany command with a prompt may be canceled by entering \"cancel\"\n"
-            );
+            System.out.printf(
+                "- help    -- shows this menu%n"+
+                "- msg     -- shows the welcome message%n"+
+                "- stop    -- stops the server%n"+
+                "- start   -- starts the game, will bring up a prompt for board dimensions%n"+
+                "- list    -- lists all players in the session%n"+
+                "- setteam -- switches what team a player is on,%n"+
+                "              prompts for player id and team id,%n"+
+                "              automatically runs the \"list\" command%n"+
+                "- tileset -- opens the prompt to change the game's tileset%n"+
+                "\nany command with a prompt may be canceled by entering \"cancel\"%n%n"
+	    );
         } else {
             System.out.println("unrecognized\n");
             clcommand("help");
@@ -451,7 +445,7 @@ public class Host {
                 return;
             } else if (line.equalsIgnoreCase("start")) {
                 if (players.isEmpty()) {
-                    System.out.println("cannot start game without any players");
+                    System.out.println("Cannot start game without any players");
                     continue;
                 }
                 itcw = getRestrictNum("Enter width: ", 1, 26);
@@ -459,7 +453,7 @@ public class Host {
                 itch = getRestrictNum("Enter height: ", 1, 26);
                 if (itch < 1) continue;
                 if (itcw == 1 && itch == 1) {
-                    System.out.println("1 x 1 boards are not possible");
+                    System.out.println("1-by-1 boards are not allowed");
                     continue;
                 }
                 gamestate = 1;

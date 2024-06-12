@@ -128,7 +128,7 @@ public class Client {
                     try {read(sIn);}
                     catch(ClientGoneException CGE) {}
                     Player p = players.get(pnum);
-                    System.out.printf("you (\"%s\") have left %s%s%s\n", p.name, p.team.color, p.team.name, Color.DEFAULT);
+                    System.out.printf("you (\"%s\") have left %s%s%s%n", p.name, p.team.color, p.team.name, Color.DEFAULT);
                     sock.close();
                     sock2.close();
                     System.exit(0);
@@ -190,7 +190,7 @@ public class Client {
             // Teams.teams.put(teamid, team);
             Player p = new Player(pnum, Teams.teams[teamid], clname);
             players.put(pnum, p);
-            System.out.printf("you (\"%s\") have joined %s%s%s\n", p.name, p.team.color, p.team.name, Color.DEFAULT);
+            System.out.printf("you (\"%s\") have joined %s%s%s%n", p.name, p.team.color, p.team.name, Color.DEFAULT);
             preloop();
         } catch (Exception E) {
             E.printStackTrace();
@@ -213,7 +213,7 @@ public class Client {
                 return;
             }
             if (commcode == 1) {
-                System.out.println("\nHOST HAS STARTED THE GAME");
+                System.out.println("HOST HAS STARTED THE GAME");
                 synchronized(READY_LOCK) {
                     if (ready) {
                         gamestate = 1;
@@ -241,20 +241,20 @@ public class Client {
                 // Teams.teams.put(tid, team);
                 Team team = Teams.teams[tid];
                 players.put(pid, new Player(pid, team, otname));
-                System.out.printf("\"%s\" has joined %s%s%s\n", otname, team.color, team.name, Color.DEFAULT);
+                System.out.printf("\"%s\" has joined %s%s%s%n", otname, team.color, team.name, Color.DEFAULT);
             }
             if (commcode == 3) {
                 int pid = read(sIn);
                 int tid = read(sIn);
                 Player p = players.get(pid);
                 Team nteam = Teams.teams[tid];
-                System.out.printf("\"%s\" has switched from team %s%s%s to team %s%s%s\n", p.name, p.team.color, p.team.name, Color.DEFAULT, nteam.color, nteam.name, Color.DEFAULT);
+                System.out.printf("\"%s\" has switched from team %s%s%s to team %s%s%s%n", p.name, p.team.color, p.team.name, Color.DEFAULT, nteam.color, nteam.name, Color.DEFAULT);
                 p.team = nteam;
             }
             if (commcode == 4) {
                 int pid = read(sIn);
                 Player left = players.remove(pid);
-                System.out.printf("\"%s\" from %s%s%s has left\n", left.name, left.team.color, left.team.name, Color.DEFAULT);
+                System.out.printf("\"%s\" from %s%s%s has left%n", left.name, left.team.color, left.team.name, Color.DEFAULT);
             }
             if (commcode == 5) {
                 int setid = read(sIn);
@@ -279,7 +279,7 @@ public class Client {
             System.out.println(board);
             if (board.checkWinner() != -2) {
                 // System.out.printf("Team %s%s has won!\n", Teams.teams[board.checkWinner()], Color.DEFAULT);
-                System.out.printf("Team %s has won!\n", Teams.teams[board.checkWinner()]);
+                System.out.printf("Team %s has won!%n", Teams.teams[board.checkWinner()]);
                 Board.scoreboard();
                 gamestate = 0;
                 return;
@@ -289,32 +289,32 @@ public class Client {
                 int row;
                 int col;
                 while (true) {
-                    System.out.printf("%sEnter Move:%s\n", players.get(pnum).team.color, Color.DEFAULT);
+                    System.out.printf("%sEnter Move:%s%n", players.get(pnum).team.color, Color.DEFAULT);
                     needInput ++;
                     String l = inputs.take().toUpperCase();
                     if (l.length() == 0) {
-                        System.out.println("malformed");
+                        System.out.println("[Malformed input]");
                         continue;
                     }
                     col = ((int)l.charAt(0)) - ((int)'A');
                     if (col < 0 || col >= board.w) {
-                        System.out.println("malformed");
+                        System.out.println("[Malformed input]");
                         continue;
                     }
                     if (l.substring(1).matches("^[0-9]{1,2}$")) {
                         row = Integer.parseInt(l.substring(1))-1;
                     } else {
-                        System.out.println("malformed");
+                        System.out.println("[Malformed input]");
                         continue;
                     }
                     if (row < 0 || row >= board.h) {
-                        System.out.println("malformed");
+                        System.out.println("[Malformed input]");
                         continue;
                     }
                     sOut.write(col);
                     sOut.write(row);
                     if (read(sIn) == 0) {
-                        System.out.println("invalid");
+                        System.out.println("Invalid move");
                         continue;
                     }
                     break;
@@ -324,7 +324,7 @@ public class Client {
             int row = read(sIn);
             int team = read(sIn);
             if (ccode != 1) {
-                System.out.printf(" %s%c%d%s\n", Teams.teams[team].color, board.alpha[col], (row+1), Color.DEFAULT);
+                System.out.printf("%n%s%c%d%s%n", Teams.teams[team].color, board.alpha[col], (row+1), Color.DEFAULT);
             }
             board.addTo(col, row, team);
         }
